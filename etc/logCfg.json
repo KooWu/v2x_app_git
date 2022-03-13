@@ -1,16 +1,16 @@
 {
-	"FilePath":	"/home/yxw/log/",
+	"FilePath":	"/home/yxw/share/log/v2x",
 	"Process":	[{
 			"ProcessName":	"v2x_app",
-			"MaxFileSize_MB":	1,
+			"MaxFileSize_KB":	10,
 			"MaxFileNum":	5,
-			"Level":	3,
+			"Level":	15,
 			"Output":	0
 		}, {
-			"ProcessName":	"gnss_app",
-			"MaxFileSize_MB":	2,
+			"ProcessName":	"test",
+			"MaxFileSize_KB":	10,
 			"MaxFileNum":	5,
-			"Level":	7,
-			"Output":	1
+			"Level":	15,
+			"Output":	0
 		}]
 }
