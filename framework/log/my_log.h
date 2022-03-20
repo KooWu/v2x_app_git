@@ -13,7 +13,7 @@ typedef enum {
 
 void MyPrintLog(char *fileName, uint32_t line, MyLogLevel level, char *format, ...);
 
-#define MY_PRINT(fmt, args... ) printf("file[%s], line[%d]: "fmt"\n", __FILE__, __LINE__, ##args)
+#define dbg(fmt, args... ) printf("file[%s], line[%d]: "fmt"\n", __FILE__, __LINE__, ##args)
 #define MY_DEBUG(format, args...) MyPrintLog(__FILE__, __LINE__, DEBUG_LEVEL, format, ##args)
 #define MY_INFO(format, args...)  MyPrintLog(__FILE__, __LINE__, INFO_LEVEL, format, ##args)
 #define MY_WARN(format, args...) MyPrintLog(__FILE__, __LINE__, WARN_LEVEL, format, ##args)

@@ -29,7 +29,7 @@
 #define LOG_SIZE_MIN 1024
 #define LOG_FILE_NUM_MAX 20
 #define LOG_FILE_NUM_MIN 2
-#define LOG_CACHE_SIZE (10 * 1024)
+#define LOG_CACHE_SIZE (8 * 1024)
 #define LOG_LINE_MAX 1024
 #define LOG_FLUSH_SIZE_MAX (LOG_CACHE_SIZE - LOG_LINE_MAX)
 #define LOG_TIME_OUT 3
@@ -163,19 +163,19 @@ void MyPrintLog(char *fileName, uint32_t line, MyLogLevel level, char *format, .
 
 static int32_t MyLogGetProcessName(char *processName, uint32_t processNameLen)
 {
-    MY_PRINT();
+    dbg();
     int32_t nameLen;
     char name[LOG_PATH_LEN];
     char *string = NULL;
 
     if ((processName == NULL) || (processNameLen < LOG_PATH_LEN)) {
-        MY_PRINT("invalid param\n");
+        dbg("invalid param\n");
         return -1;
     }
 
     nameLen = readlink("/proc/self/exe", name, sizeof(name) - 1);
     if ((nameLen == -1) || (nameLen > LOG_PATH_LEN)) {
-        MY_PRINT("readlink error or path is too long processNameLen:%d\n", processNameLen);
+        dbg("readlink error or path is too long processNameLen:%d\n", processNameLen);
         return -1;
     }
     name[nameLen] = '\0';
@@ -194,11 +194,11 @@ static int32_t MyLogGetProcessName(char *processName, uint32_t processNameLen)
 
 static int32_t MyLogCheckLogPathIsValid(void)
 {
-    MY_PRINT();
+    dbg();
     DIR *dir = opendir(g_logCfg.logPath);
     if (dir == NULL) {
         if (mkdir(g_logCfg.logPath, 0644) != 0) {
-            MY_PRINT("mkdir failed");
+            dbg("mkdir failed");
             return -1;
         }
     } else {
@@ -211,7 +211,7 @@ static int32_t MyLogCheckLogPathIsValid(void)
 
 static void MyLogParseJsonCfg(cJSON *item)
 {
-    MY_PRINT();
+    dbg();
     g_logCfg.level = LOG_DEFAULT_LEVEL;
     g_logCfg.size = LOG_DEFAULT_SIZE;
     g_logCfg.maxFileNum = LOG_FILE_NUM_MIN;
@@ -248,10 +248,10 @@ static void MyLogParseJsonCfg(cJSON *item)
 
 static int32_t MyLogParseJsonFile(char *buf, char *processName)
 {
-    MY_PRINT();
+    dbg();
     cJSON *root = cJSON_Parse(buf);
     if(NULL == root) {
-        MY_PRINT("cJSON_Parse failed\n");
+        dbg("cJSON_Parse failed\n");
         return -1;
     }
 
@@ -259,13 +259,13 @@ static int32_t MyLogParseJsonFile(char *buf, char *processName)
     do {
         cJSON *filePath = cJSON_GetObjectItem(root, "FilePath");
         if(filePath == NULL) {
-             MY_PRINT("cJSON_GetObjectItem FilePath failed\n");
+             dbg("cJSON_GetObjectItem FilePath failed\n");
              break;
         }
 
         cJSON *process = cJSON_GetObjectItem(root, "Process");
         if(process == NULL) {
-             MY_PRINT("cJSON_GetObjectItem Process failed\n");
+             dbg("cJSON_GetObjectItem Process failed\n");
              break;
         }
         bool isFind = false;
@@ -276,7 +276,7 @@ static int32_t MyLogParseJsonFile(char *buf, char *processName)
             item = cJSON_GetArrayItem(process, i);
             cJSON *subItem = cJSON_GetObjectItem(item, "ProcessName");
             if (subItem == NULL) {
-                MY_PRINT("processName: %s\n", subItem->valuestring);
+                dbg("processName: %s\n", subItem->valuestring);
                 isFind = false;
                 break;
             }
@@ -287,7 +287,7 @@ static int32_t MyLogParseJsonFile(char *buf, char *processName)
             }
         }
         if (!isFind) {
-            MY_PRINT("not find %s\n", processName);
+            dbg("not find %s\n", processName);
             break;
         }
         (void)strncpy(g_logCfg.logPath, filePath->valuestring, strlen(filePath->valuestring));
@@ -301,10 +301,10 @@ static int32_t MyLogParseJsonFile(char *buf, char *processName)
 
 static int32_t MyLogReadFileCfgBuf(char *logJsonBuf, uint32_t size)
 {
-    MY_PRINT();
+    dbg();
     int32_t fd = open(LOG_CFG_FILE_NAME, O_RDONLY);
     if (fd == -1) {
-        MY_PRINT("open failed\n");
+        dbg("open failed\n");
         return -1;
     }
     
@@ -314,19 +314,19 @@ static int32_t MyLogReadFileCfgBuf(char *logJsonBuf, uint32_t size)
         memset(&statInfo, 0, sizeof(statInfo));
         ret = fstat(fd, &statInfo);
         if (ret != 0) {
-            MY_PRINT("fstat failed\n");
+            dbg("fstat failed\n");
             break;
         }
 
         if (statInfo.st_size == 0 || statInfo.st_size >= size) {
-            MY_PRINT("json file too big\n");
+            dbg("json file too big\n");
             ret = -1;
             break;
         }
         
         ret = read(fd, logJsonBuf, statInfo.st_size);
         if (ret != statInfo.st_size) {
-            MY_PRINT("read failed, ret:%d\n", ret);
+            dbg("read failed, ret:%d\n", ret);
             break;
         }
         ret = 0;
@@ -338,16 +338,16 @@ static int32_t MyLogReadFileCfgBuf(char *logJsonBuf, uint32_t size)
 
 static int32_t MyLogLoadFileCfg(char *processName)
 {
-    MY_PRINT();
+    dbg();
     char buf[1024];
     int32_t ret = MyLogReadFileCfgBuf(buf, sizeof(buf));
     if (ret != 0) {
-        MY_PRINT("MyLogReadFileCfgBuf failed\n");
+        dbg("MyLogReadFileCfgBuf failed\n");
         return -1;
     }
     ret = MyLogParseJsonFile(buf, processName);
     if (ret != 0) {
-        MY_PRINT("MyLogParseJsonFile failed\n");
+        dbg("MyLogParseJsonFile failed\n");
         return -1;
     }
     return 0;
@@ -364,7 +364,7 @@ static void MyLogLoadDefaultCfg(void)
 
 static int32_t MyLogCfgLoad(char *processName)
 {
-    MY_PRINT();
+    dbg();
     if (MyLogLoadFileCfg(processName) != 0) {
         MyLogLoadDefaultCfg();
     }
@@ -385,10 +385,10 @@ static void MyLogPathCreate(char *processName)
 
 static int32_t MyLogReadIdxFile(void)
 {
-    MY_PRINT();
+    dbg();
     int fd = open(g_logCfg.logIdxFile, O_RDWR | O_CREAT | O_TRUNC, 0664);
     if (fd == -1) {
-        MY_PRINT("open failed\n");
+        dbg("open failed\n");
         return 0;
     }
     char idxstr[4] = {0};
@@ -464,13 +464,13 @@ static void MyLogInitSuccessLog(char *processName)
     MY_INFO("%s log start\n", processName);
     MY_INFO("logName: %s, level: %u, size: %u, maxFileNum: %u, output: %d\n",
             g_logCfg.logName, g_logCfg.level, g_logCfg.size, g_logCfg.maxFileNum, g_logCfg.output);
-    MY_PRINT("logName: %s, level: %u, size: %u, maxFileNum: %u, output: %d\n",
+    dbg("logName: %s, level: %u, size: %u, maxFileNum: %u, output: %d\n",
             g_logCfg.logName, g_logCfg.level, g_logCfg.size, g_logCfg.maxFileNum, g_logCfg.output);
 }
 
 int32_t MyLogInit(void)
 {
-    MY_PRINT();
+    dbg();
     (void)pthread_mutex_lock(&g_initMutex);
     if (g_isInit) {
         (void)pthread_mutex_unlock(&g_initMutex);
@@ -484,12 +484,12 @@ int32_t MyLogInit(void)
         (void)sem_init(&g_timedSem, 0, 0);
         ret = MyLogGetProcessName(processName, sizeof(processName));
         if (ret != 0) {
-            MY_PRINT("MyLogGetProcessName failed\n");
+            dbg("MyLogGetProcessName failed\n");
             break;
         }
 
         if (MyLogCfgLoad(processName) != 0) {
-            MY_PRINT("LogCfgLoad failed\n");
+            dbg("LogCfgLoad failed\n");
             break;
         }
 
